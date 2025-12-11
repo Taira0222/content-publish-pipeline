@@ -55,7 +55,7 @@ GitHub → Settings → Secrets and variables → Actions →
 
 ### 8. X への投稿に必要な Token の登録
 
-このリポジトリでは x-ruby（[https://sferik.github.io/x-ruby/](https://sferik.github.io/x-ruby/)を使用します。
+このリポジトリでは [x-ruby](https://sferik.github.io/x-ruby/)を使用します。
 
 以下を X Developer から取得し、GitHub Secrets に登録してください：
 
