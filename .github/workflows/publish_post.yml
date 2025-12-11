@@ -1,0 +1,109 @@
+name: Publish Article and Post to X
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # UTCで毎日2時に実行(日本時間11時)
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # cache を追加
+          cache: 'npm'
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.5'
+
+      - name: Install qiita-cli
+        run: npm install -g @qiita/qiita-cli@latest
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Run Publish Article Script
+        env:
+          QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
+        run: ruby scripts/publish_article.rb
+
+      - name: Upload Published URL Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-url
+          path: published_url.txt
+
+      - name: Upload Published Title Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-title
+          path: published_title.txt
+
+  post_to_x:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      - name: Download Published URL Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: published-url
+          path: published
+
+      - name: Download Published Title Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: published-title
+          path: published_title
+
+      - name: Read Published URL
+        id: read_url
+        run: |
+          published_url=$(cat published/published_url.txt)
+          echo "Published URL is: $published_url"
+          echo "published_url=$published_url" >> $GITHUB_OUTPUT
+
+      - name: Read Published Title
+        id: read_title
+        run: |
+          title=$(head -n 1 published_title/published_title.txt)
+          echo "Extracted title: $title"
+          echo "title<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$title" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Ruby for X API posting
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3.5'
+
+      - name: Install x-ruby gem
+        run: gem install x
+
+      - name: Post tweet using x-ruby
+        env:
+          TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
+          TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
+          TWITTER_ACCESS_TOKEN_KEY: ${{ secrets.TWITTER_ACCESS_TOKEN_KEY }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+          TWEET_TITLE: ${{ steps.read_title.outputs.title }}
+          TWEET_URL: ${{ steps.read_url.outputs.published_url }}
+        run: ruby scripts/post_x.rb
