@@ -25,13 +25,7 @@ GitHub 上でこのリポジトリを Fork してください。
 git clone https://github.com/<YourAccount>/content-publish-pipeline.git
 ```
 
-### 3. Qiita CLI をインストール
-
-```bash
-npm install
-```
-
-### 4. Qiita アカウント設定
+### 3. Qiita アカウント設定
 
 `scripts/publish_article.rb` 内の以下を、自分の Qiita アカウント名に変更：
 
@@ -39,21 +33,21 @@ npm install
 YOUR_QIITA_ACCOUNT = 'YOUR_QIITA_ACCOUNT_NAME'
 ```
 
-### 5. X（Twitter）投稿設定
+### 4. X（Twitter）投稿設定
 
 `scripts/post_x.rb` の `hashtags` を好みのタグに設定してください。
 
-### 6. GitHub Actions の投稿タイミング設定
+### 5. GitHub Actions の投稿タイミング設定
 
 `.github/workflows/publish_post.yml` 内の cron を好きな時間に設定してください。
 ※GitHub Actions は UTC で実行され、数十分〜数時間前後ズレることがあります。
 
-### 7. Qiita Token を Secrets に登録
+### 6. Qiita Token を Secrets に登録
 
 GitHub → Settings → Secrets and variables → Actions →
 `QIITA_TOKEN` として登録。
 
-### 8. X への投稿に必要な Token の登録
+### 7. X への投稿に必要な Token の登録
 
 このリポジトリでは [x-ruby](https://sferik.github.io/x-ruby/)を使用します。
 
