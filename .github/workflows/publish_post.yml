@@ -3,6 +3,8 @@ name: Publish Article and Post to X
 on:
   schedule:
     - cron: '0 2 * * *' # UTCで毎日2時に実行(日本時間11時)
+permissions:
+  contents: write
 defaults:
   run:
     shell: bash
@@ -21,8 +23,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache を追加
-          cache: 'npm'
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -98,12 +98,12 @@ jobs:
       - name: Install x-ruby gem
         run: gem install x
 
-      - name: Post tweet using x-ruby
+      - name: Post X using x-ruby
         env:
-          TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
-          TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
-          TWITTER_ACCESS_TOKEN_KEY: ${{ secrets.TWITTER_ACCESS_TOKEN_KEY }}
-          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
-          TWEET_TITLE: ${{ steps.read_title.outputs.title }}
-          TWEET_URL: ${{ steps.read_url.outputs.published_url }}
+          X_CONSUMER_KEY: ${{ secrets.X_CONSUMER_KEY }}
+          X_CONSUMER_SECRET: ${{ secrets.X_CONSUMER_SECRET }}
+          X_ACCESS_TOKEN_KEY: ${{ secrets.X_ACCESS_TOKEN_KEY }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          POST_TITLE: ${{ steps.read_title.outputs.title }}
+          POST_URL: ${{ steps.read_url.outputs.published_url }}
         run: ruby scripts/post_x.rb

@@ -4,10 +4,10 @@ require "json"
 
 # 環境変数から x‑ruby 用の認証情報を取得
 x_credentials = {
-  api_key:             ENV['TWITTER_CONSUMER_KEY'],
-  api_key_secret:      ENV['TWITTER_CONSUMER_SECRET'],
-  access_token:        ENV['TWITTER_ACCESS_TOKEN_KEY'],
-  access_token_secret: ENV['TWITTER_ACCESS_TOKEN_SECRET']
+  api_key:             ENV['X_CONSUMER_KEY'],
+  api_key_secret:      ENV['X_CONSUMER_SECRET'],
+  access_token:        ENV['X_ACCESS_TOKEN_KEY'],
+  access_token_secret: ENV['X_ACCESS_TOKEN_SECRET']
 }
 
 # クライアントの初期化
@@ -20,12 +20,12 @@ hashtag_beginner = "#駆け出しエンジニア"
 
 hashtags = "#{hashtag_qiita}\n#{hashtag_engineer}\n#{hashtag_beginner}"
 
-# ツイート本文の組み立て
-tweet_text = "#{ENV['TWEET_TITLE']} #{ENV['TWEET_URL']}\n#{hashtags}"
+# 投稿の本文の組み立て
+post_text = "#{ENV['POST_TITLE']} #{ENV['POST_URL']}\n#{hashtags}"
 
-# ツイート投稿（JSON形式の文字列を渡す）
-payload = { text: tweet_text }.to_json
+# 投稿（JSON形式の文字列を渡す）
+payload = { text: post_text }.to_json
 post = x_client.post("tweets", payload)
 
-puts "Tweet posted successfully!"
-puts "Tweet URL: https://twitter.com/i/web/status/#{post["data"]["id"]}"
+puts "X posted successfully!"
+puts "X URL: https://twitter.com/i/web/status/#{post["data"]["id"]}"

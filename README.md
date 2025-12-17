@@ -42,10 +42,32 @@ YOUR_QIITA_ACCOUNT = 'YOUR_QIITA_ACCOUNT_NAME'
 `.github/workflows/publish_post.yml` 内の cron を好きな時間に設定してください。
 ※GitHub Actions は UTC で実行され、数十分〜数時間前後ズレることがあります。
 
+もし自動投稿機能は使わず、手動で行いたい場合は以下のように書く必要があります
+```yml
+on:
+  workflow_dispatch: # この記述が必要
+#   schedule:
+#     - cron: '0 2 * * *' # UTCで毎日2時に実行(日本時間11時)
+
+```
+
 ### 6. Qiita Token を Secrets に登録
 
-GitHub → Settings → Secrets and variables → Actions →
-`QIITA_TOKEN` として登録。
+Qiita のTokenの取得方法は
+
+1. Qiitaにログインしマイページに行く
+2. 右上のアイコンをクリックし「設定」を開く
+3. 「アプリケーション」の「個人用アクセストークン」で「新しくトークンを作成する」をクリック
+4. 以下の画像通り（名前は適宜変えてもらってOKです）に設定し「発行する」を選択
+5. トークンが発行されるので忘れずに保管
+
+![スクリーンショット 2025-12-17 午前11.27.39.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/3883070/5d294365-12f1-40c2-a6f6-41e6c4d97a08.png)
+
+これをGitHubに登録します。
+1. Forkしたこのレポジトリに移動
+2. SettingのSecrets and variables → Actionsと進む
+3. Repository secrets の New repository secretをクリック
+4. `QIITA_TOKEN` としてさっき取得したトークンをここに貼る
 
 ### 7. X への投稿に必要な Token の登録
 
@@ -55,22 +77,27 @@ GitHub → Settings → Secrets and variables → Actions →
 
 | 用途                | Secrets 名例                  |
 | ------------------- | ----------------------------- |
-| Consumer API Key    | `TWITTER_CONSUMER_KEY`        |
-| Consumer API Secret | `TWITTER_CONSUMER_SECRET`     |
-| Access Token        | `TWITTER_ACCESS_TOKEN_KEY`    |
-| Access Token Secret | `TWITTER_ACCESS_TOKEN_SECRET` |
+| Consumer API Key    | `X_CONSUMER_KEY`        |
+| Consumer API Secret | `X_CONSUMER_SECRET`     |
+| Access Token        | `X_ACCESS_TOKEN_KEY`    |
+| Access Token Secret | `X_ACCESS_TOKEN_SECRET` |
 
-※ Secrets 名を変更する場合は、`.github/workflows/publish_post.yml`や`scripts/post_x.rb`も同様に変更してください
 
 X Developer 登録方法は以下が参考になります：
 [https://qiita.com/newt0/items/66cb76b1c8016e9d0339](https://qiita.com/newt0/items/66cb76b1c8016e9d0339)
+
+登録が完了したら、以下の画像の「Projects & Apps」下の赤い丸を選択し、
+「Consumer Keys」と「Authenticate Tokens」の「Access Token and Secret」の情報を
+上記の`QIITA_TOKEN` 同様にGitHubに登録してください
+
+![スクリーンショット 2025-12-17 午前11.59.14.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/3883070/2add4b8a-9298-4f90-9b10-dee64b156a21.png)
 
 ---
 
 ## ✏️ 使い方：記事の追加
 
 1. `template/` にあるサンプル記事をコピー
-2. `stock/stockNNN.md` の形式でファイルを作成
+2. `stock/stockNNN.md` の形式でファイルを作成(`NNN`には数字を入れてくださいex: `stock256.md`)
 3. あとは GitHub Actions が毎日 or 設定した時刻に、自動で：
 
    - 最小番号の `stock*.md` を pick
@@ -78,6 +105,7 @@ X Developer 登録方法は以下が参考になります：
    - Qiita に投稿
    - X にも投稿
    - GitHub に commit & push
+   - 次使う場合は`git pull` してから使用してください。(`public`に記事が投稿されているため)
 
 ---
 
