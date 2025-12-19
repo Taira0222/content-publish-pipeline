@@ -10,6 +10,57 @@ PUBLISHED_URL_PATH   = File.join(ROOT_DIR, 'published_url.txt')
 
 YOUR_QIITA_ACCOUNT = 'Taira0222'  # ご自身のQiitaアカウント名に変更してください
 
+# ファイルから updated_at の日付を抽出する
+def extract_updated_at(file_path)
+  content = File.read(file_path)
+  match = content.match(/^updated_at:\s*['"]?(\d{4}-\d{2}-\d{2})T/)
+  match ? match[1] : nil
+rescue StandardError => e
+  warn "Error reading #{file_path}: #{e}"
+  nil
+end
+
+# public 内のファイルを updated_at 順にリネームする
+def normalize_public_articles
+  return unless Dir.exist?(PUBLIC_DIR)
+
+  Dir.chdir(PUBLIC_DIR) do
+    md_files = Dir.glob('*.md')
+    return if md_files.empty?
+
+    puts "Normalizing #{md_files.size} files in public directory..."
+
+    # 全ファイルの updated_at を取得
+    file_dates = {}
+    md_files.each do |file|
+      date = extract_updated_at(file)
+      file_dates[file] = date if date
+    end
+
+    return if file_dates.empty?
+
+    # 日付順にソート（古い順）
+    sorted_files = file_dates.sort_by { |_file, date| date }.map(&:first)
+
+    # 一時ファイル名にリネーム
+    temp_names = {}
+    sorted_files.each_with_index do |file, index|
+      temp_name = "_temp_article_#{index + 1}.md"
+      temp_names[file] = temp_name
+      FileUtils.mv(file, temp_name)
+    end
+
+    # 最終的な article 名にリネーム
+    sorted_files.each_with_index do |original_file, index|
+      article_num = index + 1
+      new_name = "article#{article_num}.md"
+      FileUtils.mv(temp_names[original_file], new_name)
+    end
+
+    puts "Normalized #{sorted_files.size} files to article*.md format."
+  end
+end
+
 # 次に公開する stock*.md を最小番号で選ぶ
 def find_oldest_stock(stock_dir)
   stock_files = Dir.children(stock_dir).grep(/^stock(\d+)\.md$/)
@@ -52,10 +103,12 @@ rescue StandardError => e
   ''
 end
 
-# Qiita CLI で公開し、公開 URL を返す
-def publish_article(article_num)
+# Qiita CLI で公開し、公開 URL を返す（ファイル名を指定）
+def publish_article_by_filename(filename)
   Dir.chdir(ROOT_DIR) do
-    cmd = "npx qiita publish article#{article_num}"
+    # 拡張子なしのファイル名で publish
+    base_name = File.basename(filename, '.md')
+    cmd = "npx qiita publish #{base_name}"
     puts "Running command: #{cmd}"
     cli_output = `#{cmd}`.strip
     puts "CLI output: #{cli_output}"
@@ -87,21 +140,27 @@ def main
   raise 'stock ディレクトリが見つかりません。' unless Dir.exist?(STOCK_DIR)
   FileUtils.mkdir_p(PUBLIC_DIR)
 
+  # 1. stock から public に移動（リネームせず）
   oldest_stock = find_oldest_stock(STOCK_DIR)
   puts "Moving file: #{oldest_stock}"
   moved_path = move_stock_to_public(oldest_stock)
 
-  article_num = next_article_number
-  puts "Renaming moved file to: article#{article_num}.md"
-  article_path = rename_to_article(moved_path, article_num)
-
-  title = extract_title(article_path)
+  # 2. タイトルを抽出
+  title = extract_title(moved_path)
   puts "Extracted title: #{title}"
   File.write(PUBLISHED_TITLE_PATH, title)
 
-  published_url = publish_article(article_num)
+  # 3. 先に publish（これで updated_at が付与される）
+  published_url = publish_article_by_filename(oldest_stock)
   puts "Published URL: #{published_url}"
   File.write(PUBLISHED_URL_PATH, published_url)
+
+  # 4. 全ファイルを updated_at 順に article*.md にリネーム
+  normalize_public_articles
+
+  # 5. 最新の article 番号を取得してコミット
+  article_num = next_article_number - 1
+  puts "New article renamed to: article#{article_num}.md"
 
   commit_and_push(ROOT_DIR, "Add article#{article_num}")
 end
