@@ -25,7 +25,23 @@ post_text = "#{ENV['POST_TITLE']} #{ENV['POST_URL']}\n#{hashtags}"
 
 # 投稿（JSON形式の文字列を渡す）
 payload = { text: post_text }.to_json
-post = x_client.post("tweets", payload)
 
-puts "X posted successfully!"
-puts "X URL: https://twitter.com/i/web/status/#{post["data"]["id"]}"
+# 投稿の送信とエラーハンドリング
+begin
+  post = x_client.post("tweets", payload)
+  puts "X posted successfully!"
+  puts "X URL: https://x.com/i/web/status/#{post["data"]["id"]}"
+rescue X::Error => e
+  puts "X API Error: #{e.class}"
+  puts "Message: #{e.message}"
+  puts ""
+  puts "詳細情報:"
+  puts "- HTTP Status: #{e.respond_to?(:code) ? e.code : 'N/A'}"
+  puts "- Response Body: #{e.respond_to?(:body) ? e.body : 'N/A'}"
+  exit 1
+rescue StandardError => e
+  puts "Unexpected Error: #{e.class}"
+  puts "Message: #{e.message}"
+  puts "Backtrace: #{e.backtrace.first(5).join("\n")}"
+  exit 1
+end
